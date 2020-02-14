@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.example.sample.service.impl.SampleMapper">
+
+	<resultMap id="sample" type="egovframework.example.sample.service.SampleVO">
+		<result property="id" column="id"/>
+		<result property="usage_date" column="usage_date"/>
+		<result property="s_code" column="s_code"/>
+		<result property="usage_cost" column="usage_cost"/>
+		<result property="u_code" column="u_code"/>
+		<result property="ok_cost" column="ok_cost"/>
+		<result property="reg_date" column="reg_date"/>
+		<result property="receipt_o" column="receipt_o"/>
+		<result property="receipt_r" column="receipt_r"/>
+		<result property="processing_date" column="processing_date"/>
+		<result property="u_codeName" column="u_codeName"/>
+		<result property="s_codeName" column="s_codeName"/>
+		
+	</resultMap>
+
+	<insert id="insertSample" parameterType="SampleVO">
+			
+			INSERT INTO COST
+				( ID
+				  , USAGE_DATE
+				  , S_CODE
+				  , USAGE_COST
+				  , U_CODE
+				  , REG_DATE
+				  , RECEIPT_O
+				  , RECEIPT_R )
+			VALUES
+				( ID_SEQ.NEXTVAL
+				  , #{usage_date}
+				  , 'S01'
+				  , #{usage_cost}
+				  , #{u_code}
+				  , SYSDATE
+				  , #{receipt_o}
+				  , #{receipt_r} )
+				  
+	</insert>
+
+	<update id="updateSample">
+	
+			UPDATE COST
+			<if test="ok_cost == 0">
+			SET U_CODE=#{u_code}
+				, USAGE_DATE=#{usage_date}
+				, USAGE_COST=#{usage_cost}
+				, RECEIPT_O=#{receipt_o}
+				, RECEIPT_R=#{receipt_r}
+			</if>
+				
+
+			<if test="s_code != null and ok_cost != 0">
+				SET S_CODE=#{s_code}
+					, PROCESSING_DATE=SYSDATE
+					, OK_COST=#{ok_cost}
+					, NOTE=#{note}
+			</if>
+			WHERE ID=#{id}
+	</update>
+	
+		<update id="updateSample2">
+
+			UPDATE COST
+			SET S_CODE=#{s_code}
+				, PROCESSING_DATE=SYSDATE
+				, OK_COST=#{ok_cost}
+				, NOTE=#{note}
+			WHERE ID=#{id}
+
+	</update>
+
+	<delete id="deleteSample">
+
+			DELETE FROM COST
+			WHERE ID=#{id}
+
+	</delete>
+
+	<select id="selectSample" resultMap="sample">
+
+			SELECT ID
+						, TO_CHAR(USAGE_DATE, 'YYYY-MM-DD') AS USAGE_DATE
+						, A.S_CODE
+						, S_CODENAME
+						, USAGE_COST
+						, A.U_CODE
+						, U_CODENAME
+						, OK_COST
+						, REG_DATE
+						, RECEIPT_O
+						, RECEIPT_R
+						, PROCESSING_DATE
+						, NOTE
+			FROM COST A
+			INNER JOIN USAGE B ON A.U_CODE = B.U_CODE
+			INNER JOIN STATUS C ON A.S_CODE = C.S_CODE
+			WHERE ID=#{id}
+
+	</select>
+
+	<select id="selectSampleList" parameterType="searchVO" resultMap="sample">
+
+			SELECT ID
+						, TO_CHAR(USAGE_DATE, 'YYYY/MM/DD') AS USAGE_DATE
+						, A.S_CODE
+						, S_CODENAME
+						, USAGE_COST
+						, OK_COST
+						, A.U_CODE
+						, U_CODENAME
+						, TO_CHAR(REG_DATE, 'YYYY/MM/DD') AS REG_DATE
+			FROM COST A
+			INNER JOIN USAGE B ON A.U_CODE = B.U_CODE
+			INNER JOIN STATUS C ON A.S_CODE = C.S_CODE
+			WHERE 1=1
+			<if test='searchUsage != null and searchUsage !=""'>
+    		  <if test='!searchUsage.equals("U00")'>
+                 AND A.U_CODE = #{ searchUsage }
+              </if>
+	         </if>
+	         <if test='searchStatus != null and searchStatus !=""'>
+	    		  <if test='!searchStatus.equals("S00")'>
+	                 AND A.S_CODE = #{ searchStatus }
+	              </if>
+	         </if>
+	         <if test='searchRegDate != null and searchRegDate !=""'>
+	                 AND TO_CHAR(REG_DATE, 'YYYY/MM') LIKE #{ searchRegDate }
+	         </if>
+	         ORDER BY USAGE_DATE DESC, ID DESC
+	</select>
+
+	<select id="selectSampleListTotCnt" parameterType="searchVO" resultType="int">
+
+			SELECT COUNT(*)
+			FROM COST A
+			INNER JOIN USAGE B ON A.U_CODE = B.U_CODE
+			INNER JOIN STATUS C ON A.S_CODE = C.S_CODE
+			WHERE 1=1
+			<if test='searchUsage != null and searchUsage !=""'>
+    		  <if test='!searchUsage.equals("U00")'>
+                 AND A.U_CODE = #{ searchUsage }
+              </if>
+	         </if>
+	         <if test='searchStatus != null and searchStatus !=""'>
+	    		  <if test='!searchStatus.equals("S00")'>
+	                 AND A.S_CODE = #{ searchStatus }
+	              </if>
+	         </if>
+	         <if test='searchRegDate != null and searchRegDate !=""'>
+	                 AND TO_CHAR(REG_DATE, 'YYYY/MM') LIKE #{ searchRegDate }
+	         </if>
+	</select>
+
+	<sql id ="search">
+		<if test='searchUsage != null and searchUsage !=""'>
+    		  <if test='!searchUsage.equals("U00")'>
+                 and U_CODE = #{ searchUsage }
+              </if>
+         </if>
+         <if test='searchStatus != null and searchStatus !=""'>
+    		  <if test='!searchStatus.equals("S00")'>
+                 and S_CODE = #{ searchStatus }
+              </if>
+         </if>
+    </sql>
+    
+    <select id="excelList" parameterType="searchVO" resultMap="sample">
+    	SELECT ID
+						, TO_CHAR(USAGE_DATE, 'YYYY/MM/DD') AS USAGE_DATE
+						, A.S_CODE
+						, S_CODENAME
+						, USAGE_COST
+						, OK_COST
+						, A.U_CODE
+						, U_CODENAME
+						, TO_CHAR(REG_DATE, 'YYYY/MM/DD') AS REG_DATE
+			FROM COST A
+			INNER JOIN USAGE B ON A.U_CODE = B.U_CODE
+			INNER JOIN STATUS C ON A.S_CODE = C.S_CODE
+			WHERE 1=1
+			<if test='searchUsage != null and searchUsage !=""'>
+    		  <if test='!searchUsage.equals("U00")'>
+                 AND A.U_CODE = #{ searchUsage }
+              </if>
+	         </if>
+	         <if test='searchStatus != null and searchStatus !=""'>
+	    		  <if test='!searchStatus.equals("S00")'>
+	                 AND A.S_CODE = #{ searchStatus }
+	              </if>
+	         </if>
+	         <if test='searchRegDate != null and searchRegDate !=""'>
+	                 AND TO_CHAR(REG_DATE, 'YYYY/MM') LIKE #{ searchRegDate }
+	         </if>
+	         ORDER BY USAGE_DATE DESC, ID DESC
+    </select>
+</mapper>
